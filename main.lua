@@ -8,11 +8,13 @@ local SHARK_ENERGY = 5
 local UPDATE_INTERVAL = 0.25
 local timer = 0
 
-local PAUSE_BUTTON_HEIGHT = 30
+local BUTTON_HEIGHT = 30
 local isPaused = false
 
 local grid = {}
 local nextGrid = {}
+
+local buttons = {}
 
 function love.load()
   -- Initialize rng
@@ -37,10 +39,19 @@ function love.load()
 end
 
 function love.mousepressed(x, y, button, istouch, presses)
-  if button == 1 then
-    if y < PAUSE_BUTTON_HEIGHT then
-      isPaused = not isPaused
+  local clickedLabel = ""
+  if button == 1 then -- left click
+    for _, btn in ipairs(buttons) do
+      if x >= btn.x and x <= btn.x + btn.width and y >= btn.y and y <= btn.y + btn.height then
+        clickedLabel = btn.label        
+      end
     end
+  end
+
+  if clickedLabel == "PAUSE" then
+    isPaused = true
+  elseif clickedLabel == "PLAY" then
+    isPaused = false  
   end
 end
 
@@ -76,13 +87,19 @@ function love.update(dt)
 end
 
 function love.draw()
-  love.graphics.setColor(0.3, 0.3, 0.3)
-  love.graphics.rectangle("fill", 0, 0, love.graphics.getWidth(), PAUSE_BUTTON_HEIGHT)
-  love.graphics.setColor(1, 1, 1)
+  -- love.graphics.setColor(0.3, 0.3, 0.3)
+  -- love.graphics.rectangle("fill", 0, 0, love.graphics.getWidth(), BUTTON_)
+  -- love.graphics.setColor(1, 1, 1)
   local pauseText = isPaused and "PLAY" or "PAUSE"
-  love.graphics.print(pauseText, 10, 0)
-  local fps = love.timer.getFPS()
-  love.graphics.translate(0, PAUSE_BUTTON_HEIGHT)
+  -- love.graphics.print(pauseText, 10, 0)
+  -- local fps = love.timer.getFPS()
+    
+  drawTopBar()
+
+  buttons = {}
+  roundedButton(pauseText, 5, textWidth("PAUSE") + 20, 5, 0.3, 0.3, 0.3)
+
+  love.graphics.translate(0, BUTTON_HEIGHT + 10)
   
   for x = 1, GRID_WIDTH do
     for y = 1, GRID_HEIGHT do
@@ -96,6 +113,42 @@ function love.draw()
       love.graphics.rectangle("fill", (x-1)*CELL_SIZE, (y-1)*CELL_SIZE, CELL_SIZE, CELL_SIZE)
     end
   end
+end
+
+function textWidth(text)
+  local font = love.graphics.getFont()
+  return font:getWidth(text)
+end
+
+function roundedButton(text, x, buttonWidth, radius, r, g, b)
+  local y = 5
+  local font = love.graphics.getFont()
+  local textWidth = font:getWidth(text)
+  local textHeight = font:getHeight()
+  
+  local btn = { x=x, y=y, width=buttonWidth, height=BUTTON_HEIGHT, label=text }
+  table.insert(buttons, btn)
+  love.graphics.setColor(r, g, b)
+  love.graphics.rectangle("fill", x + radius, y + radius, buttonWidth - (radius * 2), BUTTON_HEIGHT - radius * 2)
+	love.graphics.rectangle("fill", x + radius, y, buttonWidth - (radius * 2), radius)
+	love.graphics.rectangle("fill", x + radius, y + BUTTON_HEIGHT - radius, buttonWidth - (radius * 2), radius)
+	love.graphics.rectangle("fill", x, y + radius, radius, BUTTON_HEIGHT - (radius * 2))
+	love.graphics.rectangle("fill", x + buttonWidth - radius, y + radius, radius, BUTTON_HEIGHT - (radius * 2))
+	
+	love.graphics.arc("fill", x + radius, y + radius, radius, math.rad(-180), math.rad(-90))
+	love.graphics.arc("fill", x + buttonWidth - radius , y + radius, radius, math.rad(-90), math.rad(0))
+	love.graphics.arc("fill", x + radius, y + BUTTON_HEIGHT - radius, radius, math.rad(-180), math.rad(-270))
+	love.graphics.arc("fill", x + buttonWidth - radius , y + BUTTON_HEIGHT - radius, radius, math.rad(0), math.rad(90))
+
+  love.graphics.setColor(1, 1, 1)  
+  local textX = x + (buttonWidth - textWidth) / 2
+  local textY = y + (BUTTON_HEIGHT - textHeight) / 2
+  love.graphics.print(text, textX, textY)
+end
+
+function drawTopBar()
+  love.graphics.setColor(0.0, 0.0, 0.0)
+  love.graphics.rectangle("fill", 0, 0, love.graphics.getWidth(), BUTTON_HEIGHT + 10)
 end
 
 function updateCell(x, y)
